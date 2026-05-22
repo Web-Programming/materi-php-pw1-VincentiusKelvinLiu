@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Barang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class BarangController extends Controller
 {
@@ -18,10 +19,6 @@ class BarangController extends Controller
             ]
         );
     }
-
-    function create(){
-        return view("barang.create", ['title' => 'Tambah Barang']);
-    }
     
     //detail/show
     function show($id){
@@ -32,10 +29,33 @@ class BarangController extends Controller
         ]);
     }
 
+    //create
+    function create(){
+        Gate::authorize('create-barang');
+        return view("barang.create", ['title' => 'Tambah Barang']);
+    }
+
+
+    //store
+    function store(Request $request){
+        Gate::authorize('create-barang');
+        $validated = $request->validate([
+            'nama_barang' => 'required|string|max:50',
+            'jumlah' => 'required|integer|min:0',
+            'status' => 'required|boolean',
+            'harga' => 'required|numeric|min:0',
+            'tgl_input' => 'nullable|date',
+        ]);
+
+        Barang::insert($validated);
+
+        return redirect('/barang')->with('success', 'Data barang berhasil ditambahkan.');
+    }
+
     //edit
     function edit($id){
         $barang = Barang::findOrFail($id);
-
+        Gate::authorize('update-barang', $barang);
         return view("barang.edit", [
             'title' => 'Edit Barang',
             'barang' => $barang,
@@ -51,33 +71,19 @@ class BarangController extends Controller
             'harga' => 'required|numeric|min:0',
             'tgl_input' => 'nullable|date',
         ]);
-
         $barang = Barang::findOrFail($id);
+        Gate::authorize('update-barang', $barang);
+
         $barang->update($validated);
 
         return redirect('/barang')->with('success', 'Data barang berhasil diperbarui.');
     }
 
-    //store
-    function store(Request $request){
-        $validated = $request->validate([
-            'nama_barang' => 'required|string|max:50',
-            'jumlah' => 'required|integer|min:0',
-            'status' => 'required|boolean',
-            'harga' => 'required|numeric|min:0',
-            'tgl_input' => 'nullable|date',
-        ]);
-
-        Barang::insert($validated);
-
-        return redirect('/barang')->with('success', 'Data barang berhasil ditambahkan.');
-    }
-
     //delete
     function destroy($id){
         $barang = Barang::findOrFail($id);
+        Gate::authorize('delete-barang', $barang);
         $barang->delete();
-
         return redirect('/barang')->with('success', 'Data barang berhasil dihapus.');
     }
    
